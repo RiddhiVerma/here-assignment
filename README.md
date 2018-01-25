@@ -5,7 +5,7 @@ it is an example of implementing websocket(ws) on both server and client side
 ```
 $ npm install --save ws express
 or 
-$ git clone git@github.com:riddhiverma/here-assignment-example.git
+$ git clone git@github.com:wahengchang/here-assignment-example.git
 ```
 
 ## Unstanding ws

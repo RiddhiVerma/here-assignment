@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Assignment</title>
+    <style type="text/css">
+        
+        body {
+            background: #2aa3ef;
+            color: #ffffff;
+            font: 14px/18px 'Lato', Arial, sans-serif;
+        }
+
+        .inner {
+            background: #0e7abe;
+            padding: 10px;
+            width: 45%;
+            display: inline-block;
+        }
+
+        #tweet {
+            padding: 3px;
+            min-height: 100px;
+            margin-top: 20px;
+            font-size: 12px;
+            width: 640px;
+        }
+
+        button {
+            padding: 8px 4px;
+            cursor: pointer;
+            width: 200px;
+            margin-top: 20px;
+        }
+
+        h1 {
+            font-size: 20px;
+            font-weight: 400;
+        }
+
+        .description {
+            font-weight: 300;
+        }
+
+        .wrapper {
+            width: 100%;
+            margin: 20px;
+        }
+
+        .app {
+            width: 45%;
+            padding: 10px;
+            background: rgba(230, 230, 230, 0.45);
+            display: inline-block;
+            vertical-align: top;
+            min-height: 228px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+  <div class="inner">
+    <h1>What do you have in mind today?</h1>
+    <textarea id="tweet" name="" placeholder="Type here" maxlength="250"></textarea>
+    <button id="submit" >Post</button> 
+  </div>
+  <div class="app">
+    <div id="map">
+        <span>Your messages will appear in this box after 24hrs time gap</span>
+        <ul>
+        </ul>
+    </div>
+  </div>
+  <div class="infobox"></div>
+</div>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+<script>
+    var ws = new WebSocket('ws://localhost:40510');
+    var mydate = new Date(); 
+    var lat;
+    var lng
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(positionSuccess, positionError, { enableHighAccuracy: true });
+    } else {
+        $('.map').text('Your browser is out of fashion, there\'s no geolocation!');
+    }
+    ws.onopen = function () {
+        console.log('websocket is connected ...')
+        $("#submit").click(function(){
+            var json = { tweet: $("#tweet").val(),latitude:lat,longitude:lng,date:mydate};
+            ws.send(JSON.stringify(json))
+        });
+    }
+    function positionSuccess(position) {
+        lat = position.coords.latitude;
+        lng = position.coords.longitude;
+    }
+    function positionError(error) {
+        var errors = {
+            1: 'Authorization fails', // permission denied
+            2: 'Can\'t detect your location', //position unavailable
+            3: 'Connection timeout' // timeout
+        };
+        showError('Error:' + errors[error.code]);
+    }
+
+    function showError(msg) {
+        $('#infobox').addClass('error').text(msg);
+
+        $(document).click(function() {
+            $('#infobox').removeClass('error');
+        });
+    }
+
+    ws.onmessage = function (ev) {
+        var mydata = JSON.parse(ev.data);
+        var thendate = new Date(mydata.date);
+        var nowdate = Date.now();
+        var diff = moment.utc(moment(nowdate,"DD/MM/YYYY HH:mm:ss").diff(moment(thendate,"DD/MM/YYYY HH:mm:ss"))).format("HH:mm:ss");
+        if(diff != "Invalid date") {     
+        //moment function returns Inavlid date when difference betweeb two timestamsps is less than 24hrs. Remove this condition to instantly update the messages.
+            $(ev).each(function(){
+                $("#map ul").append('<li>'+mydata.tweet+'</li>')
+            });
+        }
+    }
+</script>
+</body>
+
+</html>
